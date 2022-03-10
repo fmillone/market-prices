@@ -70,6 +70,27 @@ class DolarSiService {
     }
   }
 
+  Future<Map<String, Currency>> getAll() async {
+    final xmlElement = await fetchDollarSiData();
+    final mainValues = xmlElement.getElement('valores_principales');
+    final Map<String, Currency> map = {};
+
+    if(mainValues!= null){
+      map.addAll(mapValuesToCurrencyObjects(mainValues, dollarKinds));
+    } else {
+      throw Exception('Failed to get main values from response');
+    }
+
+    final currencies = xmlElement.getElement('Monedas');
+    if(currencies!= null){
+      map.addAll(mapValuesToCurrencyObjects(currencies, currencyKinds));
+    } else {
+      throw Exception('Failed to get currencies from response');
+    }
+
+    return map;
+  }
+
   Future<XmlElement> fetchDollarSiData() async {
 
     try {

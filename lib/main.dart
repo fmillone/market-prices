@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:market_prices/buenbit_service.dart';
 import 'package:market_prices/dolar_service.dart';
+import 'package:market_prices/settings.dart';
+import 'package:provider/provider.dart';
 
 import 'Currency.dart';
+import 'settings_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,27 +17,32 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Market Prices',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Market Prices'),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => CurrencyList()),
+        ChangeNotifierProvider(create: (context) => SettingsStore())
+      ],
+      child: MaterialApp(
+          title: 'Market Prices',
+          theme: ThemeData(
+            // This is the theme of your application.
+            //
+            // Try running your application with "flutter run". You'll see the
+            // application has a blue toolbar. Then, without quitting the app, try
+            // changing the primarySwatch below to Colors.green and then invoke
+            // "hot reload" (press "r" in the console where you ran "flutter run",
+            // or simply save your changes to "hot reload" in a Flutter IDE).
+            // Notice that the counter didn't reset back to zero; the application
+            // is not restarted.
+            primarySwatch: Colors.blue,
+          ),
+          home: const MyHomePage()),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({Key? key}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -45,46 +53,51 @@ class MyHomePage extends StatefulWidget {
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
 
-  final String title;
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Currency> _dollars = [];
   final dolarSiService = DolarSiService();
   final buenbitService = BuenbitService();
 
-
   @override
   void initState() {
+    final curr = Provider.of<CurrencyList>(context, listen: false);
+    if (curr.items.isEmpty) {
+      _updateDollars(clear: false);
+    }
     super.initState();
-    _updateDollars();
   }
 
-  void _updateDollars() async {
-    final dollarData = await dolarSiService.getDollars();
-    final currenciesData = await dolarSiService.getCurrencies();
-    final daisData = await buenbitService.getDai();
-    setState(() {
-      _dollars.clear();
-      _dollars.add(dollarData['Oficial']!);
-      _dollars.add(dollarData['Blue']!);
-      _dollars.add(dollarData['Liqui']!);
-      _dollars.add(dollarData['Bolsa']!);
-      _dollars.add(dollarData['Turista']!);
+  void _updateDollars({bool clear = true}) async {
+    final curr = Provider.of<CurrencyList>(context, listen: false);
+    if(clear) {
+      curr.clear();
+    }
 
-      _dollars.add(currenciesData['USD/EUR']!);
-      _dollars.add(currenciesData['USD/Real']!);
-      _dollars.add(currenciesData['USD/Libra']!);
-      _dollars.add(currenciesData['USD/Chileno']!);
-      _dollars.add(currenciesData['USD/UY']!);
-      _dollars.add(currenciesData['USD/Yuan']!);
-
-      _dollars.add(daisData['Dai Ars']!);
-      _dollars.add(daisData['Dai USD']!);
-    });
+    List<Map<String, Currency>> maps = await Future.wait([
+      dolarSiService.getAll(),
+      buenbitService.getDai()
+    ]);
+    final settingsStore = Provider.of<SettingsStore>(context, listen: false);
+    curr.addAll(settingsStore.tickers.where((e) => e.value).map((e) => maps[0][e.key] ?? maps[1][e.key]!));
+    // curr.addAll([
+    //   maps[0]['Oficial']!,
+    //   maps[0]['Blue']!,
+    //   maps[0]['Liqui']!,
+    //   maps[0]['Bolsa']!,
+    //   maps[0]['Turista']!,
+    //   maps[0]['USD/EUR']!,
+    //   maps[0]['USD/Real']!,
+    //   maps[0]['USD/Libra']!,
+    //   maps[0]['USD/Chileno']!,
+    //   maps[0]['USD/UY']!,
+    //   maps[0]['USD/Yuan']!,
+    //   maps[1]['Dai Ars']!,
+    //   maps[1]['Dai USD']!,
+    //   maps[1]['Crypto (dai)']!,
+    // ]);
   }
 
   @override
@@ -99,7 +112,16 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Market Prices'),
+        leading: IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const SettingsWidget()));
+          },
+        ),
       ),
       body: centerView(),
       floatingActionButton: FloatingActionButton(
@@ -111,10 +133,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Color getColor(double? variation) {
-    if(variation != null) {
-      if(variation > 0) {
+    if (variation != null) {
+      if (variation > 0) {
         return Colors.green.shade400;
-      } else if(variation < 0) {
+      } else if (variation < 0) {
         return Colors.redAccent.shade200;
       } else {
         return Colors.black12;
@@ -126,24 +148,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget tickerBox(Currency e) {
     return Container(
-        padding: const EdgeInsets.all(8),
-        color: getColor(e.variation),
-        child: RichText(
-          text: TextSpan(
-              children: <TextSpan>[
-                TextSpan(
-                  text: e.name.replaceAll('Dolar ', ''),
-                  style: Theme.of(context).textTheme.headline5,
-                ),
-                const TextSpan( text: '\n\n'),
-                TextSpan(
-                  text: formatPrices(e) ,
-                  style: Theme.of(context).textTheme.headline6,
-                ),
-              ]
+      padding: const EdgeInsets.all(8),
+      color: getColor(e.variation),
+      child: RichText(
+        text: TextSpan(children: <TextSpan>[
+          TextSpan(
+            text: e.name.replaceAll('Dolar ', ''),
+            style: Theme.of(context).textTheme.headline5,
           ),
-        ),
-      );
+          const TextSpan(text: '\n\n'),
+          TextSpan(
+            text: formatPrices(e),
+            style: Theme.of(context).textTheme.headline6,
+          ),
+        ]),
+      ),
+    );
   }
 
   Widget centerView() {
@@ -152,18 +172,20 @@ class _MyHomePageState extends State<MyHomePage> {
       slivers: <Widget>[
         SliverPadding(
           padding: const EdgeInsets.all(20),
-          sliver: SliverGrid.count(
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            crossAxisCount: 2,
-            children: _dollars.map((e) => tickerBox(e)).toList(),
+          sliver: Consumer<CurrencyList>(
+            builder: (context, list, a) => SliverGrid.count(
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              crossAxisCount: 2,
+              children: list.items.map((e) => tickerBox(e)).toList(),
+            ),
           ),
         ),
       ],
     );
   }
 
-  String formatDouble(double number){
+  String formatDouble(double number) {
     return number.toStringAsFixed(2);
   }
 
@@ -174,5 +196,4 @@ class _MyHomePageState extends State<MyHomePage> {
       return '${formatDouble(data.buy!)} / ${formatDouble(data.sell)}';
     }
   }
-
 }
