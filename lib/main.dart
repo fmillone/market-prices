@@ -64,6 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     final curr = Provider.of<CurrencyList>(context, listen: false);
+    final settingsStore = Provider.of<SettingsStore>(context, listen: false);
+    settingsStore.loadTickers();
     if (curr.items.isEmpty) {
       _updateDollars(clear: false);
     }
@@ -81,23 +83,10 @@ class _MyHomePageState extends State<MyHomePage> {
       buenbitService.getDai()
     ]);
     final settingsStore = Provider.of<SettingsStore>(context, listen: false);
-    curr.addAll(settingsStore.tickers.where((e) => e.value).map((e) => maps[0][e.key] ?? maps[1][e.key]!));
-    // curr.addAll([
-    //   maps[0]['Oficial']!,
-    //   maps[0]['Blue']!,
-    //   maps[0]['Liqui']!,
-    //   maps[0]['Bolsa']!,
-    //   maps[0]['Turista']!,
-    //   maps[0]['USD/EUR']!,
-    //   maps[0]['USD/Real']!,
-    //   maps[0]['USD/Libra']!,
-    //   maps[0]['USD/Chileno']!,
-    //   maps[0]['USD/UY']!,
-    //   maps[0]['USD/Yuan']!,
-    //   maps[1]['Dai Ars']!,
-    //   maps[1]['Dai USD']!,
-    //   maps[1]['Crypto (dai)']!,
-    // ]);
+    curr.addAll(
+        settingsStore.tickers
+            .where((e) => e.value)
+            .map((e) => maps[0][e.key] ?? maps[1][e.key]!));
   }
 
   @override
