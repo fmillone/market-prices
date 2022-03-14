@@ -1,27 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:market_prices/main.dart';
-import 'package:market_prices/settings.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SettingsPage extends StatelessWidget {
+import 'settings.dart';
+
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return const SettingsWidget();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            ref.read(SettingsStore.provider).saveTickers()
+                .then((value) => Navigator.pop(context, true))
+            ;
+          },
+        ),
+      ),
+      body: const SettingsWidget(),
+    );
   }
 }
 
-class SettingsWidget extends StatefulWidget {
+class SettingsWidget extends ConsumerStatefulWidget {
   const SettingsWidget({Key? key}) : super(key: key);
 
   @override
-  State<SettingsWidget> createState() => _SettingsWidgetState();
+  ConsumerState<SettingsWidget> createState() => _SettingsWidgetState();
 }
 
-class _SettingsWidgetState extends State<SettingsWidget> {
+class _SettingsWidgetState extends ConsumerState<SettingsWidget> {
+  @override
+  Widget build(BuildContext context) {
+    final store = ref.watch(SettingsStore.provider);
+    return Center(
+      child: ReorderableListView(
+        buildDefaultDragHandles: false,
+        onReorder: (int oldIndex, int newIndex) {
+          store.reorderTickers(oldIndex, newIndex);
+        },
+        children: getOptionList(store.tickers),
+      ),
+    );
+  }
+
   List<Widget> getOptionList(List<Setting> op) {
-    List<Widget> list = [];
     var index = 0;
     return op
         .map((elem) => CheckboxListTile(
@@ -38,44 +66,5 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               ),
             ))
         .toList();
-    return list;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final curr = Provider.of<SettingsStore>(context, listen: false);
-    curr.loadTickers();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            final curr = Provider.of<SettingsStore>(context, listen: false);
-            curr.saveTickers();
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const MyHomePage()));
-          },
-        ),
-      ),
-      body: Center(
-        child: Consumer<SettingsStore>(
-          builder: (ctx, store, _) => ReorderableListView(
-            buildDefaultDragHandles: false,
-            onReorder: (int oldIndex, int newIndex) {
-              store.reorderTickers(oldIndex, newIndex);
-            },
-            children: getOptionList(store.tickers),
-          ),
-        ),
-      ),
-    );
   }
 }

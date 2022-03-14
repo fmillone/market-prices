@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Setting {
@@ -13,7 +14,7 @@ class Setting {
     return '$key|$value';
   }
 
-  factory Setting.decode(String string ) {
+  factory Setting.decode(String string) {
     final split = string.split('|');
     final key = split[0];
     final value = split[1];
@@ -24,7 +25,6 @@ class Setting {
 bool _parseBool(String? string) {
   return string?.toLowerCase() == 'true';
 }
-
 
 final List<Setting> defaultTickers = [
   Setting('Oficial', true),
@@ -43,18 +43,19 @@ final List<Setting> defaultTickers = [
   Setting('Crypto (dai)', true),
 ];
 
-
 class SettingsStore extends ChangeNotifier {
-  final List<Setting> _tickers = [];
+  static final provider = ChangeNotifierProvider((ref) => SettingsStore());
   static const String tickersCode = 'tickers';
+
+  final List<Setting> _tickers = [];
 
   UnmodifiableListView<Setting> get tickers => UnmodifiableListView(_tickers);
 
-  void loadTickers() async {
+  Future<void> loadTickersConfig() async {
     final prefs = await SharedPreferences.getInstance();
     final tickers = prefs.getStringList(tickersCode);
     print('loadTickers: $tickers');
-    if(tickers == null) {
+    if (tickers == null || tickers.isEmpty) {
       _tickers.clear();
       _tickers.addAll(defaultTickers);
     } else {
@@ -64,9 +65,11 @@ class SettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void saveTickers() async {
+  Future<void> saveTickers() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList(tickersCode, _tickers.map((setting) => setting.encode()).toList());
+    prefs.setStringList(
+        tickersCode, _tickers.map((setting) => setting.encode()).toList());
+    notifyListeners();
   }
 
   void reorderTickers(int oldIndex, int newIndex) {
@@ -78,5 +81,4 @@ class SettingsStore extends ChangeNotifier {
     _tickers.insert(newIndex, item);
     notifyListeners();
   }
-
 }

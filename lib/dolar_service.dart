@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
-import 'Currency.dart';
+import 'currency.dart';
 
 
 

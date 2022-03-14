@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'Currency.dart';
+import 'currency.dart';
 
 final Map<String,String> buenbitKinds = {
   'Dai Ars': 'daiars',
