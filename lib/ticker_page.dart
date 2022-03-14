@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'currency.dart';
+import 'ticker_price.dart';
 import 'settings_page.dart';
 import 'ticker_service.dart';
 
@@ -13,7 +13,6 @@ class TickerPage extends ConsumerStatefulWidget {
 }
 
 class _TickerPageState extends ConsumerState<TickerPage> {
-
   @override
   void initState() {
     super.initState();
@@ -21,7 +20,7 @@ class _TickerPageState extends ConsumerState<TickerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final list = ref.watch(TickerService.filteredProvider);
+    final list = ref.watch(PriceList.filtered);
 
     return Scaffold(
       appBar: AppBar(
@@ -29,10 +28,8 @@ class _TickerPageState extends ConsumerState<TickerPage> {
         leading: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const SettingsPage()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()));
           },
         ),
       ),
@@ -59,27 +56,29 @@ class _TickerPageState extends ConsumerState<TickerPage> {
     }
   }
 
-  Widget tickerBox(Currency e) {
+  Widget tickerBox(TickerPrice e) {
     return Container(
       padding: const EdgeInsets.all(8),
       color: getColor(e.variation),
-      child: RichText(
-        text: TextSpan(children: <TextSpan>[
-          TextSpan(
-            text: e.name.replaceAll('Dolar ', ''),
-            style: Theme.of(context).textTheme.headline5,
-          ),
-          const TextSpan(text: '\n\n'),
-          TextSpan(
-            text: formatPrices(e),
-            style: Theme.of(context).textTheme.headline6,
-          ),
-        ]),
+      child: FittedBox(
+        child: RichText(
+          text: TextSpan(children: <TextSpan>[
+            TextSpan(
+              text: e.name.replaceAll('Dolar ', ''),
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            const TextSpan(text: '\n\n'),
+            TextSpan(
+              text: formatPrices(e),
+              style: Theme.of(context).textTheme.headline6,
+            ),
+          ]),
+        ),
       ),
     );
   }
 
-  Widget centerView(Iterable< Currency> list) {
+  Widget centerView(Iterable<TickerPrice> list) {
     return CustomScrollView(
       primary: false,
       slivers: <Widget>[
@@ -91,11 +90,11 @@ class _TickerPageState extends ConsumerState<TickerPage> {
     );
   }
 
-  Widget sliver(Iterable<Currency> list) {
+  Widget sliver(Iterable<TickerPrice> list) {
     return SliverGrid.count(
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      crossAxisCount: 2,
+      crossAxisCount: MediaQuery.of(context).size.width ~/ 130,
       children: list.map((e) => tickerBox(e)).toList(),
     );
   }
@@ -104,7 +103,7 @@ class _TickerPageState extends ConsumerState<TickerPage> {
     return number.toStringAsFixed(2);
   }
 
-  String formatPrices(Currency data) {
+  String formatPrices(TickerPrice data) {
     if (data.buy == null) {
       return formatDouble(data.sell);
     } else {

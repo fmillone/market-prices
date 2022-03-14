@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'settings.dart';
 import 'ticker_page.dart';
 import 'ticker_service.dart';
-import 'currency.dart';
+import 'ticker_price.dart';
 
 class LoaderPage extends ConsumerStatefulWidget {
   const LoaderPage({Key? key}) : super(key: key);
@@ -14,14 +14,13 @@ class LoaderPage extends ConsumerStatefulWidget {
 }
 
 class _LoaderState extends ConsumerState {
-  var _future;
 
   @override
   void initState() {
-    _future = Future.wait([
+    Future.wait([
       ref.read(SettingsStore.provider).loadTickersConfig(),
-      Future.delayed(const Duration(seconds: 15)),
-      if (ref.read(CurrencyList.provider).items.isEmpty)
+      Future.delayed(const Duration(seconds: 2)),
+      if (ref.read(PriceList.provider).items.isEmpty)
         ref.read(TickerService.provider).fetchPrices()
     ]).then((value) => redirectToMainView());
     super.initState();

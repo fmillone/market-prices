@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:market_prices/dolar_service.dart';
+import 'package:market_prices/dolarsi_service.dart';
 
 void main() {
   test("test xml parser", () async {

@@ -16,9 +16,10 @@ class SettingsPage extends ConsumerWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            ref.read(SettingsStore.provider).saveTickers()
-                .then((value) => Navigator.pop(context, true))
-            ;
+            ref
+                .read(SettingsStore.provider)
+                .saveTickers()
+                .then((value) => Navigator.pop(context, true));
           },
         ),
       ),
@@ -27,16 +28,11 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-class SettingsWidget extends ConsumerStatefulWidget {
+class SettingsWidget extends ConsumerWidget {
   const SettingsWidget({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<SettingsWidget> createState() => _SettingsWidgetState();
-}
-
-class _SettingsWidgetState extends ConsumerState<SettingsWidget> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final store = ref.watch(SettingsStore.provider);
     return Center(
       child: ReorderableListView(
@@ -44,20 +40,18 @@ class _SettingsWidgetState extends ConsumerState<SettingsWidget> {
         onReorder: (int oldIndex, int newIndex) {
           store.reorderTickers(oldIndex, newIndex);
         },
-        children: getOptionList(store.tickers),
+        children: getOptionList(store),
       ),
     );
   }
 
-  List<Widget> getOptionList(List<Setting> op) {
+  List<Widget> getOptionList(SettingsStore store) {
     var index = 0;
-    return op
+    return store.tickers
         .map((elem) => CheckboxListTile(
               key: Key(elem.key),
               onChanged: (bool? b) {
-                setState(() {
-                  elem.value = b ?? false;
-                });
+                store.setTickerValue(elem.key, b ?? false);
               },
               value: elem.value,
               title: ReorderableDragStartListener(

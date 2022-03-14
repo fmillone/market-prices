@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'currency.dart';
+import 'ticker_price.dart';
 
 final Map<String,String> buenbitKinds = {
   'Dai Ars': 'daiars',
@@ -18,17 +18,17 @@ class BuenbitService {
     return jsonDecode(body)['object'];
   }
 
-  Map<String, Currency> mapValuesToCurrencyObjects(Map<String, dynamic> element){
-    final Map<String, Currency> map = {};
+  Map<String, TickerPrice> mapValuesToCurrencyObjects(Map<String, dynamic> element){
+    final Map<String, TickerPrice> map = {};
     buenbitKinds.forEach((key, value) => {
-      map[key] = Currency(
+      map[key] = TickerPrice(
         name: 'Dai Ars',
         sell: toDouble(element[value]?['selling_price']),
         buy:  toDouble(element[value]?['purchase_price']),
       )
     });
 
-    map['Crypto (dai)'] = Currency(
+    map['Crypto (dai)'] = TickerPrice(
       name: 'Crypto (dai)',
       sell: toDouble(element['daiars']?['selling_price']) / toDouble(element['daiusd']?['purchase_price']),
       buy: toDouble(element['daiars']?['purchase_price']) / toDouble(element['daiusd']?['selling_price'])
@@ -37,7 +37,7 @@ class BuenbitService {
     return map;
   }
 
-  Future<Map<String, Currency>> getDai() async {
+  Future<Map<String, TickerPrice>> getDai() async {
     final data = await fetchBuenbitData();
     return mapValuesToCurrencyObjects(data);
   }

@@ -24,6 +24,4 @@ samples, guidance on mobile development, and a full API reference.
 
 # TODO:
 
-- Fix box sizes
-- Rename classes to something more meaningful
-- Reorganize the code
+- ?

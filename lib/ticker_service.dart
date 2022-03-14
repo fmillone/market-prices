@@ -1,48 +1,33 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'buenbit_service.dart';
-import 'currency.dart';
-import 'dolar_service.dart';
-import 'settings.dart';
+import 'ticker_price.dart';
+import 'dolarsi_service.dart';
 
 class TickerService {
   static final provider = Provider((ref) => TickerService(
-        ref.read(CurrencyList.provider),
+        ref.read(PriceList.provider),
         DolarSiService(),
         BuenbitService(),
       ));
 
-  static final filteredProvider = Provider<Iterable<Currency>>((ref) {
-    final list = ref.watch(CurrencyList.provider);
-    final settings = ref.watch(SettingsStore.provider);
-    if (list.items.isEmpty) {
-      print('WARN!: rendering empty tickers');
-      return [];
-    } else {
-      return settings.tickers
-          .where((e) => e.value)
-          .map((e) => list.items[e.key]!)
-          .toList();
-    }
-  });
-
-  final CurrencyList _currencyList;
+  final PriceList _priceList;
   final DolarSiService _dolarSiService;
   final BuenbitService _buenbitService;
 
-  TickerService(this._currencyList, this._dolarSiService, this._buenbitService);
+  TickerService(this._priceList, this._dolarSiService, this._buenbitService);
 
   void refreshTickers({bool clear = true}) async {
     if (clear) {
-      _currencyList.clear();
+      _priceList.clear();
     }
 
     fetchPrices();
   }
 
   Future<void> fetchPrices() async {
-    List<Map<String, Currency>> maps =
+    List<Map<String, TickerPrice>> maps =
         await Future.wait([_dolarSiService.getAll(), _buenbitService.getDai()]);
-    _currencyList.addAllIt({...maps[0], ...maps[1]});
+    _priceList.addAllIt({...maps[0], ...maps[1]});
   }
 }

@@ -81,4 +81,9 @@ class SettingsStore extends ChangeNotifier {
     _tickers.insert(newIndex, item);
     notifyListeners();
   }
+
+  void setTickerValue(String key, bool value) {
+    _tickers.singleWhere((element) => element.key == key).value = value;
+    notifyListeners();
+  }
 }
