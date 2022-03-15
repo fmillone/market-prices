@@ -27,8 +27,8 @@ class _LoaderState extends ConsumerState {
   }
 
   Future<dynamic> redirectToMainView() {
-    return Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const TickerPage()));
+    return Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(builder: (context) => const TickerPage()), (route) => false);
   }
 
   @override
