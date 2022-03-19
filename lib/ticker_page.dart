@@ -5,21 +5,11 @@ import 'ticker_price.dart';
 import 'settings_page.dart';
 import 'ticker_service.dart';
 
-class TickerPage extends ConsumerStatefulWidget {
+class TickerPage extends ConsumerWidget {
   const TickerPage({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<TickerPage> createState() => _TickerPageState();
-}
-
-class _TickerPageState extends ConsumerState<TickerPage> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final list = ref.watch(PriceList.filtered);
 
     return Scaffold(
@@ -33,7 +23,7 @@ class _TickerPageState extends ConsumerState<TickerPage> {
           },
         ),
       ),
-      body: centerView(list),
+      body: centerView(list, context),
       floatingActionButton: FloatingActionButton(
         onPressed: ref.read(TickerService.provider).refreshTickers,
         tooltip: 'Refresh',
@@ -42,7 +32,91 @@ class _TickerPageState extends ConsumerState<TickerPage> {
     );
   }
 
-  Color getColor(double? variation) {
+  Widget centerView(Iterable<TickerPrice> list, BuildContext context) {
+    return CustomScrollView(
+      primary: false,
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.all(20),
+          sliver: sliver(list, context),
+        ),
+      ],
+    );
+  }
+
+  Widget sliver(Iterable<TickerPrice> list, BuildContext context) {
+    return SliverGrid.count(
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      crossAxisCount: MediaQuery.of(context).size.width ~/ 130,
+      children: list.map((e) => TickerBox(e)).toList(),
+    );
+  }
+}
+
+class TickerBox extends ConsumerWidget {
+  TickerBox(this._price, {Key? key}) : super(key: key);
+  final TickerPrice _price;
+  final StateProvider<bool> _showAverage = StateProvider((ref) => false);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        final showAvg = ref.read(_showAverage.state);
+        showAvg.state = !showAvg.state;
+      },
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      color: _getColor(_price.variation),
+      child: FittedBox(
+        child: ref.watch(_showAverage.state).state ? _getAverageBox(context) : _getPricesBox(context),
+      ),
+    ),
+    );
+  }
+
+  Widget _getAverageBox(BuildContext context) {
+    return RichText(
+      text: TextSpan(children: <TextSpan>[
+        TextSpan(
+          text: 'Avg',
+          style: Theme.of(context).textTheme.headline5,
+        ),
+        const TextSpan(text: '\n\n'),
+        TextSpan(
+          text: _calcAvg(),
+          style: Theme.of(context).textTheme.headline6,
+        ),
+      ]),
+    );
+  }
+
+  Widget _getPricesBox(BuildContext context) {
+    return RichText(
+      text: TextSpan(children: <TextSpan>[
+        TextSpan(
+          text: _price.name.replaceAll('Dolar ', ''),
+          style: Theme.of(context).textTheme.headline5,
+        ),
+        const TextSpan(text: '\n\n'),
+        TextSpan(
+          text: _formatPrices(_price),
+          style: Theme.of(context).textTheme.headline6,
+        ),
+      ]),
+    );
+  }
+
+  String _calcAvg() {
+    if(_price.buy != null) {
+      return ((_price.buy! + _price.sell ) / 2).toStringAsFixed(2);
+    } else {
+      return _price.sell.toStringAsFixed(2);
+    }
+  }
+
+  Color _getColor(double? variation) {
     if (variation != null) {
       if (variation > 0) {
         return Colors.green.shade400;
@@ -56,58 +130,16 @@ class _TickerPageState extends ConsumerState<TickerPage> {
     }
   }
 
-  Widget tickerBox(TickerPrice e) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      color: getColor(e.variation),
-      child: FittedBox(
-        child: RichText(
-          text: TextSpan(children: <TextSpan>[
-            TextSpan(
-              text: e.name.replaceAll('Dolar ', ''),
-              style: Theme.of(context).textTheme.headline5,
-            ),
-            const TextSpan(text: '\n\n'),
-            TextSpan(
-              text: formatPrices(e),
-              style: Theme.of(context).textTheme.headline6,
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget centerView(Iterable<TickerPrice> list) {
-    return CustomScrollView(
-      primary: false,
-      slivers: <Widget>[
-        SliverPadding(
-          padding: const EdgeInsets.all(20),
-          sliver: sliver(list),
-        ),
-      ],
-    );
-  }
-
-  Widget sliver(Iterable<TickerPrice> list) {
-    return SliverGrid.count(
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      crossAxisCount: MediaQuery.of(context).size.width ~/ 130,
-      children: list.map((e) => tickerBox(e)).toList(),
-    );
-  }
-
-  String formatDouble(double number) {
+  String _formatDouble(double number) {
     return number.toStringAsFixed(2);
   }
 
-  String formatPrices(TickerPrice data) {
+  String _formatPrices(TickerPrice data) {
     if (data.buy == null) {
-      return formatDouble(data.sell);
+      return _formatDouble(data.sell);
     } else {
-      return '${formatDouble(data.buy!)} / ${formatDouble(data.sell)}';
+      return '${_formatDouble(data.buy!)} / ${_formatDouble(data.sell)}';
     }
   }
+
 }
