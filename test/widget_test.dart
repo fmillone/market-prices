@@ -6,25 +6,42 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:market_prices/main.dart';
+import 'package:market_prices/ticker_service.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'widget_test.mocks.dart';
+
+@GenerateMocks([TickerService])
 void main() {
+  SharedPreferences.setMockInitialValues({});
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    final mock = MockTickerService();
+    when(mock.fetchPrices()).thenAnswer((_) async => []);
+
+    await tester.pumpWidget(ProviderScope(
+      child: const MyApp(),
+      overrides: [TickerService.provider.overrideWithValue(mock)],
+    ));
 
     // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    verify(mock.fetchPrices()).called(1);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pump();
+
+    verifyNever(mock.fetchPrices()).called(0);
+    verify(mock.refreshTickers()).called(1);
   });
 }

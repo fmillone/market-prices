@@ -22,7 +22,7 @@ class _LoaderState extends ConsumerState {
       Future.delayed(const Duration(seconds: 2)),
       if (ref.read(PriceList.provider).items.isEmpty)
         ref.read(TickerService.provider).fetchPrices()
-    ]).then((value) => redirectToMainView());
+    ]).then((_) => redirectToMainView());
     super.initState();
   }
 
